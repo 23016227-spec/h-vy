@@ -6,8 +6,8 @@
 <title>Hà Vy ♥</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #05020f; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-  canvas { display: block; }
+  html, body { width: 100%; height: 100%; background: #05020f; overflow: hidden; }
+  canvas { display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
 </style>
 </head>
 <body>
@@ -15,31 +15,37 @@
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-canvas.width = 680;
-canvas.height = 520;
 
-const stars = Array.from({length:180}, () => ({
-  x: Math.random()*680, y: Math.random()*520,
-  r: Math.random()*1.8+0.3,
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const stars = Array.from({length: 200}, () => ({
+  x: Math.random(), y: Math.random(),
+  r: Math.random() * 1.8 + 0.3,
   alpha: Math.random(),
-  speed: Math.random()*0.012+0.003
+  speed: Math.random() * 0.012 + 0.003
 }));
 
-const nebula = Array.from({length:40}, () => ({
-  x: Math.random()*680, y: Math.random()*520,
-  r: Math.random()*60+20,
+const nebula = Array.from({length: 40}, () => ({
+  x: Math.random(), y: Math.random(),
+  r: Math.random() * 80 + 30,
   hue: Math.random() > 0.5 ? 270 : 210,
-  alpha: Math.random()*0.07+0.02
+  alpha: Math.random() * 0.07 + 0.02
 }));
 
 function heartPath(cx, cy, size) {
   ctx.beginPath();
-  for(let a=0; a<Math.PI*2; a+=0.01) {
-    const x = 16*Math.pow(Math.sin(a),3);
-    const y = -(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a));
-    const px = cx + x*size;
-    const py = cy + y*size;
-    a < 0.01 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+  for (let a = 0; a < Math.PI * 2; a += 0.01) {
+    const x = 16 * Math.pow(Math.sin(a), 3);
+    const y = -(13 * Math.cos(a) - 5 * Math.cos(2*a) - 2 * Math.cos(3*a) - Math.cos(4*a));
+    const px = cx + x * size;
+    const py = cy + y * size;
+    a < 0.01 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
   }
   ctx.closePath();
 }
@@ -47,42 +53,40 @@ function heartPath(cx, cy, size) {
 let t = 0;
 function draw() {
   t += 0.018;
-  ctx.clearRect(0,0,680,520);
 
-  // Background
   ctx.fillStyle = '#05020f';
-  ctx.fillRect(0,0,680,520);
+  ctx.fillRect(0, 0, W, H);
 
-  // Nebula
   nebula.forEach(n => {
-    const grad = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r);
+    const nx = n.x * W, ny = n.y * H;
+    const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, n.r);
     grad.addColorStop(0, `hsla(${n.hue},80%,60%,${n.alpha})`);
     grad.addColorStop(1, 'transparent');
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    ctx.arc(nx, ny, n.r, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  // Stars
   stars.forEach(s => {
-    s.alpha += Math.sin(t*s.speed*10)*0.015;
+    s.alpha += Math.sin(t * s.speed * 10) * 0.015;
     s.alpha = Math.max(0.1, Math.min(1, s.alpha));
     ctx.beginPath();
-    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
     ctx.fill();
   });
 
-  const cx = 340, cy = 240;
-  const pulse = 1 + Math.sin(t*2)*0.045;
-  const size = 9.2 * pulse;
+  const cx = W / 2;
+  const cy = H / 2 - 20;
+  const pulse = 1 + Math.sin(t * 2) * 0.045;
+  const size = Math.min(W, H) * 0.016 * pulse;
 
   // Shadow
   ctx.save();
-  ctx.translate(8, 10);
+  ctx.translate(6, 8);
   heartPath(cx, cy, size);
-  const shadow3d = ctx.createLinearGradient(cx-120, cy-100, cx+40, cy+80);
+  const shadow3d = ctx.createLinearGradient(cx - 120, cy - 100, cx + 40, cy + 80);
   shadow3d.addColorStop(0, 'rgba(80,0,120,0.22)');
   shadow3d.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = shadow3d;
@@ -91,7 +95,7 @@ function draw() {
 
   // Heart fill
   heartPath(cx, cy, size);
-  const mainGrad = ctx.createRadialGradient(cx-30, cy-40, 8, cx+10, cy+30, 130);
+  const mainGrad = ctx.createRadialGradient(cx - 30, cy - 40, 8, cx + 10, cy + 30, 130);
   mainGrad.addColorStop(0, '#e8aaff');
   mainGrad.addColorStop(0.18, '#c060f0');
   mainGrad.addColorStop(0.45, '#8b20d0');
@@ -110,53 +114,54 @@ function draw() {
   const hlSize = size * 0.68;
   ctx.save();
   ctx.beginPath();
-  for(let a=0; a<Math.PI*2; a+=0.01) {
-    const x = 16*Math.pow(Math.sin(a),3);
-    const y = -(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a));
-    const px = cx + x*hlSize - 18;
-    const py = cy + y*hlSize - 22;
-    a < 0.01 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+  for (let a = 0; a < Math.PI * 2; a += 0.01) {
+    const x = 16 * Math.pow(Math.sin(a), 3);
+    const y = -(13 * Math.cos(a) - 5 * Math.cos(2*a) - 2 * Math.cos(3*a) - Math.cos(4*a));
+    const px = cx + x * hlSize - 18;
+    const py = cy + y * hlSize - 22;
+    a < 0.01 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
   }
   ctx.closePath();
   ctx.clip();
-  const hlGrad = ctx.createRadialGradient(cx-42, cy-58, 2, cx-28, cy-38, 62);
+  const hlGrad = ctx.createRadialGradient(cx - 42, cy - 58, 2, cx - 28, cy - 38, 62);
   hlGrad.addColorStop(0, 'rgba(255,240,255,0.6)');
   hlGrad.addColorStop(0.5, 'rgba(220,160,255,0.18)');
   hlGrad.addColorStop(1, 'transparent');
   ctx.fillStyle = hlGrad;
-  ctx.fillRect(cx-160, cy-160, 320, 320);
+  ctx.fillRect(cx - 200, cy - 200, 400, 400);
   ctx.restore();
 
   // Glow
-  const glowR = 120 * pulse;
+  const glowR = 130 * pulse;
   const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
   glow.addColorStop(0, 'rgba(180,80,255,0.18)');
   glow.addColorStop(0.5, 'rgba(130,0,200,0.09)');
   glow.addColorStop(1, 'transparent');
   ctx.beginPath();
-  ctx.arc(cx, cy, glowR, 0, Math.PI*2);
+  ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
   ctx.fillStyle = glow;
   ctx.fill();
 
   // Sparkles
   const sparkles = [
-    {ox:-75, oy:-65}, {ox:80, oy:-50}, {ox:-50, oy:75}, {ox:85, oy:60}, {ox:0, oy:-95}
+    {ox: -75, oy: -65}, {ox: 80, oy: -50},
+    {ox: -50, oy: 75},  {ox: 85, oy: 60}, {ox: 0, oy: -95}
   ];
   sparkles.forEach((sp, i) => {
-    const st = t*1.4 + i*1.25;
-    const sa = (Math.sin(st)*0.5+0.5);
-    const sr = 3.5*sa;
-    const sx = cx + sp.ox + Math.sin(t*0.7+i)*6;
-    const sy = cy + sp.oy + Math.cos(t*0.9+i)*6;
+    const st = t * 1.4 + i * 1.25;
+    const sa = Math.sin(st) * 0.5 + 0.5;
+    const sr = 3.5 * sa;
+    const sx = cx + sp.ox + Math.sin(t * 0.7 + i) * 6;
+    const sy = cy + sp.oy + Math.cos(t * 0.9 + i) * 6;
     ctx.beginPath();
-    ctx.arc(sx, sy, sr, 0, Math.PI*2);
-    ctx.fillStyle = `rgba(240,190,255,${sa*0.9})`;
+    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(240,190,255,${sa * 0.9})`;
     ctx.fill();
-    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy]) => {
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx, dy]) => {
       ctx.beginPath();
-      ctx.moveTo(sx,sy);
-      ctx.lineTo(sx+dx*sr*2.5, sy+dy*sr*2.5);
-      ctx.strokeStyle = `rgba(240,190,255,${sa*0.5})`;
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx + dx * sr * 2.5, sy + dy * sr * 2.5);
+      ctx.strokeStyle = `rgba(240,190,255,${sa * 0.5})`;
       ctx.lineWidth = 0.8;
       ctx.stroke();
     });
@@ -164,12 +169,13 @@ function draw() {
 
   // Text "Hà Vy"
   ctx.save();
-  ctx.font = 'bold 36px Georgia, serif';
+  const fontSize = Math.max(28, Math.min(48, W * 0.06));
+  ctx.font = `bold ${fontSize}px Georgia, serif`;
   ctx.textAlign = 'center';
-  const textY = cy + 135;
+  const textY = cy + size * 17 + 30;
   ctx.shadowColor = '#c060f0';
-  ctx.shadowBlur = 18;
-  const textGrad = ctx.createLinearGradient(cx-100, textY-30, cx+100, textY+10);
+  ctx.shadowBlur = 20;
+  const textGrad = ctx.createLinearGradient(cx - 100, textY - 30, cx + 100, textY + 10);
   textGrad.addColorStop(0, '#f0c8ff');
   textGrad.addColorStop(0.4, '#e080ff');
   textGrad.addColorStop(0.7, '#c040e8');
